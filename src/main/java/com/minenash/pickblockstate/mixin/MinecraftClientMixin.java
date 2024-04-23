@@ -7,11 +7,11 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.component.ComponentMap;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.BlockStateComponent;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.state.property.Property;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockView;
 import net.minecraft.world.WorldView;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -31,20 +31,11 @@ public class MinecraftClientMixin {
 		if (!player.getAbilities().creativeMode || !Screen.hasControlDown() || state.hasBlockEntity())
 			return stack;
 
-		NbtCompound compoundTag = stack.getOrCreateNbt();
-		NbtCompound compoundTag3;
-		if (compoundTag.contains("BlockStateTag", 10)) {
-			compoundTag3 = compoundTag.getCompound("BlockStateTag");
-		} else {
-			compoundTag3 = new NbtCompound();
-			compoundTag.put("BlockStateTag", compoundTag3);
-		}
+		BlockStateComponent component = BlockStateComponent.DEFAULT;
+		for (var p : state.getProperties())
+			component = component.with(p, state);
 
-		for (Property property : state.getProperties()) {
-			if (state.contains(property))
-				compoundTag3.putString(property.getName(), property.name(state.get(property)));
-		}
-
+		stack.applyComponentsFrom( ComponentMap.builder().add(DataComponentTypes.BLOCK_STATE, component).build() );
 		return stack;
 
 	}
